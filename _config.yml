@@ -1,7 +1,7 @@
 # Site settings
-title: "Servo Blog"
+title: "This Week in VC4"
 description: ""
-url: "https://blog.servo.org"
+url: "https://anholt.github.io/twivc4"
 baseurl: ""
 google_analytics: 
 
@@ -10,7 +10,7 @@ permalink: pretty
 paginate: 10
 
 twitter:
-  username: ServoDev
+  username: anholt
 
 gems:
   - jekyll-redirect-from
