@@ -1,8 +1,8 @@
 # Site settings
 title: "This Week in VC4"
 description: ""
-url: "https://anholt.github.io/twivc4"
-baseurl: ""
+url: "https://anholt.github.io/"
+baseurl: "/twivc4"
 google_analytics: 
 
 #  Build settings
@@ -13,5 +13,6 @@ twitter:
   username: anholt
 
 gems:
+  - jekyll-paginate
   - jekyll-redirect-from
   - jekyll-seo-tag
