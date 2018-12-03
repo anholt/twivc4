@@ -1,0 +1,71 @@
+---
+layout:     post
+title:      2018-12-03
+date:       2018-12-03 00:30:00
+summary:    V3D TFU and caches, IGT, tinydrm, 2835 PM
+categories: 
+---
+
+In V3D land, I built kernel support for the Texture Formatting Unit
+(TFU) and started using it for glGenerateMipmaps() support.  This unit
+will be also be important for reformatting linear dmabufs (such as
+from X11 with a linear-only scanout engine) or media decode output in
+SAND format into the UIF format that V3D can render from.  The kernel
+side is in drm-misc-next, and I'll land the Mesa side once it hits
+drm-next.
+
+I also rewrote the V3D cache invalidation in the kernel thanks to
+feedback from Dave Emett on the hardware team.  In the process, this
+fixed a 3ms(!) CPU-side wait on every job submission, which improved
+throughput by 4-10x.  Now I know why my fancy new hardware felt so
+slow!  I also landed new tracepoints for anyone else debugging
+execution (aka I could write good sysprof visualization now).
+
+Now that cache management is less broken, I've started on resurrecting
+my old SSBO and shader image branches so that I can write CSD (compute
+shader) support and get the driver to GLES 3.1.
+
+In the process of writing new kernel code, I found multiple
+regressions in DRM core during CTS runs.  I rebased my old V3D IGT
+support and got it merged, and built new tests for replicating one of
+the failures (GPU hang recovery was broken).
+
+The tinydrm work from the previous month also continued.  I've
+polished kmsro some more (fewer driver symlinks, more loader knowledge
+of kmsro), and will be resubmitting soon I hope.
+
+Since I had kmsro nearly working, I gave it a shot for a V3D testing
+idea from last month.  Right now to get X11 running to do conformance
+runs on it, I've got a stub KMS implementation in a branch.  If I
+could do buffer sharing between VKMS and V3D, then kmsro could bind
+the two together so that we didn't need out-of-tree patches for V3D
+testing.  It turned out that VKMS didn't have PRIME support, so I used
+Noralf's proposed shmem helpers to add it.  I got X11 up and running
+and looking plausible, but tests were failing left and right.  This
+may be due to the shmem helpers using cached CPU mappings, when we
+want WC for interaction with most GPUs.  Because of issues like this,
+the shmem helpers for VKMS are stalled at the moment but I may land
+V3D support in kmsro anyway.
+
+In vc4 land, the Bootlin folks have been knocking off more of the HVS
+TODO entries.  Boris respun underscan support, and hopefully after the
+next revision we'll be able to land it.  He's also implemented H/V
+flipping of planes, which will be useful in some cases for 180-degree
+rotated displays.  (For 90 degree rotations, we would need panel
+support for it as the HVS can't go that way).  Paul is taking over
+Boris's load tracker work and is building tests for it to determine
+how accurate it is in predicting underflows.
+
+Finally, for vc4 I got permission to write a driver for the PM block
+that controls power and reset.  So far the only thing Linux uses the
+block for directly is the watchdog timer (which also performs reboots
+by letting the watchdog timer fire quickly).  For power domains, we've
+been using my raspberrypi-power driver to talk to the Raspberry Pi
+firmware.  However, we should be able to do things more reliably, and
+implement GPU reset properly, if we expose power domains and a reset
+controller from the PM block.  I wrote a series that moves the PM
+block to a new MFD driver, binds the watchdog driver to it, and adds a
+new soc driver for power domains and reset.  So far, I've only tested
+this driver for V3D power domains and reset, but it looks good and
+gets more of the Raspberry Pi platform supported in fully open source
+code.
